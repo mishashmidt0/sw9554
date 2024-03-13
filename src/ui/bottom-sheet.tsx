@@ -1,5 +1,5 @@
+import { animated, useSpring } from '@react-spring/web';
 import { ReactNode, useEffect, useRef } from 'react';
-import { animated, useSpring } from 'react-spring';
 
 interface BottomSheetProps {
   isOpen: boolean;
