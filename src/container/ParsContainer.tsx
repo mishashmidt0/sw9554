@@ -14,7 +14,7 @@ export const ParsContainer = () => {
         placeholder="Enter html here..."
       />
       <div className={'flex gap-10'}>
-        <HTMLRenderer html={inputValue} />
+        {inputValue && <HTMLRenderer html={inputValue} />}
       </div>
     </div>
   );

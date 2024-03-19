@@ -7,11 +7,7 @@ function App() {
   // const [open, setOpen] = useState(false);
 
   return (
-    <div
-      className={
-        'flex min-h-screen flex-col items-center justify-center bg-gradient-to-t from-gray-700'
-      }
-    >
+    <div className={'flex min-h-screen flex-col items-center justify-center'}>
       <ParsContainer />
       {/*<Button onClick={() => setOpen(true)}>Open My Wallet</Button>*/}
       {/*<BottomSheet isOpen={open} onClose={() => setOpen(false)}>*/}

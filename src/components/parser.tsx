@@ -1,109 +1,93 @@
-import React, { useEffect, useRef } from 'react';
+import { ArrowUp } from 'lucide-react';
+import { useState } from 'react';
 
-import HTMLRendererExample from './parserExample.tsx';
+import { cn } from '../lib/utils.ts';
 
-const parseHTML = (html: string) => {
+const parseHTML = (htmlString: string) => {
   const parser = new DOMParser();
-  const doc = parser.parseFromString(html, 'text/html');
-  return doc.body.firstChild;
+  const doc = parser.parseFromString(htmlString, 'text/html');
+  return doc.body.children;
+};
+type HTMLTreeProps = {
+  html: string;
 };
 
-const HTMLRenderer: React.FC<{ html: string }> = ({ html }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
+type RenderNodeProps = {
+  level: number;
+  index: number;
+  node: any;
+};
+const HTMLTree = ({ html }: HTMLTreeProps) => {
+  const [expanded, setExpanded] = useState({});
+  const handleToggle = (id: string) => {
+    setExpanded((prevState) => ({
+      ...prevState,
+      [id]: !prevState[id as keyof typeof prevState],
+    }));
+  };
 
-  useEffect(() => {
-    if (containerRef.current) {
-      const parsedHTML = parseHTML(html);
-      const endForm = createEndForm(parsedHTML as HTMLElement);
-      containerRef.current.appendChild(endForm);
+  const renderNode = ({ node, level, index }: RenderNodeProps) => {
+    node.id = index;
+    const isExpanded = expanded[node.id as keyof typeof expanded] || false;
+
+    const nodeClasses = `mb-1  border-l-2 ${
+      isExpanded ? 'border-blue-500' : 'border-transparent'
+    }`;
+
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      const tagName = node.tagName.toLowerCase();
+      const attrs = Array.from(node.attributes)
+        .map((attr: any) => `${attr.name}="${attr.value}"`)
+        .join(' ');
+      const children = Array.from(node.childNodes).map((child, i) =>
+        renderNode({ node: child, level: level + 1, index: Number(index + '0' + i) }),
+      );
+
+      return (
+        <div
+          key={node.id}
+          className={nodeClasses}
+          style={{ paddingLeft: `${(1 + level) * 3}px` }}
+        >
+          <button
+            onClick={() => handleToggle(node.id)}
+            className="flex items-center focus:outline-none"
+          >
+            {node.childNodes.length > 0 && (
+              <ArrowUp
+                className={cn(
+                  ' transition text-gray-600 mr-2',
+                  isExpanded ? 'rotate-180' : '',
+                )}
+              />
+            )}
+            <span className="mr-1 text-blue-500">{`<${tagName}`}</span>
+            {attrs && <span className="text-gray-600">{` ${attrs}`}</span>}
+            <span className="ml-1 text-blue-500">{`/>`}</span>
+          </button>
+          {isExpanded && <div>{children}</div>}
+        </div>
+      );
     }
-  }, [html]);
 
-  return <HTMLRendererExample inputValue={html.startsWith('<div') ? html : ''} />;
-};
-
-const createEndForm = (element: HTMLElement): HTMLDivElement => {
-  const div = document.createElement('div');
-  div.className = 'flex flex-col gap-3 border-2 border-indigo-200 p-3';
-
-  const children = Array.from(element.children);
-  children.forEach((child) => {
-    if (child instanceof HTMLElement) {
-      if (child.tagName === 'DIV') {
-        const childDiv = createChildDiv(child as HTMLElement);
-        div.appendChild(childDiv);
-      } else if (child.tagName === 'P') {
-        const childP = createChildP(child as HTMLElement);
-        div.appendChild(childP);
-      }
-    } else if (child instanceof Text) {
-      const childText = createChildText(child.data);
-      div.appendChild(childText);
+    if (node.nodeType === Node.TEXT_NODE && node.textContent.trim() !== '') {
+      return (
+        <div key={node.id} className={nodeClasses}>
+          <span className={'ml-1'}>{node.textContent.trim()}</span>
+        </div>
+      );
     }
-  });
 
-  return div;
+    return null;
+  };
+
+  const nodes = parseHTML(html);
+
+  return (
+    <div className="mt-10 space-y-2 rounded-md border border-gray-300 p-4">
+      {Array.from(nodes).map((node, index) => renderNode({ node, level: 0, index }))}
+    </div>
+  );
 };
 
-const createChildDiv = (element: HTMLElement): HTMLDivElement => {
-  const div = document.createElement('div');
-  div.className = 'flex flex-col gap-3 border-2 border-green-200 p-3';
-
-  const children = Array.from(element.children);
-  children.forEach((child) => {
-    if (child instanceof HTMLElement) {
-      if (child.tagName === 'DIV') {
-        const childDiv = createGrandchildDiv(child as HTMLElement);
-        div.appendChild(childDiv);
-      } else if (child.className === 'cursor-default') {
-        const childDiv = createGrandchildDiv(child as HTMLElement);
-        div.appendChild(childDiv);
-      }
-    } else if (child instanceof Text) {
-      const childText = createChildText(child.data);
-      div.appendChild(childText);
-    }
-  });
-
-  return div;
-};
-
-const createGrandchildDiv = (element: HTMLElement): HTMLDivElement => {
-  const div = document.createElement('div');
-  div.className = 'flex flex-col gap-3 border-2 border-orange-200 p-3';
-
-  const children = Array.from(element.children);
-  children.forEach((child) => {
-    if (child instanceof HTMLElement) {
-      if (child.className === 'cursor-default') {
-        const childDiv = document.createElement('div');
-        childDiv.className = 'border-2 border-purple-200';
-        childDiv.textContent = child.textContent;
-        div.appendChild(childDiv);
-      }
-    } else if (child instanceof Text) {
-      const childText = createChildText(child.data);
-      div.appendChild(childText);
-    }
-  });
-
-  return div;
-};
-
-const createChildP = (element: HTMLElement): HTMLDivElement => {
-  const div = document.createElement('div');
-  div.className = 'border-2 border-green-200 p-3';
-  div.textContent = element.textContent;
-
-  return div;
-};
-
-const createChildText = (text: string): HTMLDivElement => {
-  const div = document.createElement('div');
-  div.className = 'border-2 border-orange-200 p-3';
-  div.textContent = text;
-
-  return div;
-};
-
-export default HTMLRenderer;
+export default HTMLTree;
