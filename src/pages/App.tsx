@@ -9,7 +9,7 @@ function App() {
   return (
     <div
       className={
-        'flex h-screen flex-col items-center justify-center bg-gradient-to-t from-blue-300'
+        'flex min-h-screen flex-col items-center justify-center bg-gradient-to-t from-gray-700'
       }
     >
       <ParsContainer />
